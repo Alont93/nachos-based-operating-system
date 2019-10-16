@@ -2,8 +2,9 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.Map;
 
 /**
  * Uses the hardware timer to provide preemption, and to allow threads to sleep
@@ -11,7 +12,7 @@ import java.util.Queue;
  */
 public class Alarm {
 
-	private Queue<ThreadPriority> waitQueue;
+	private Map<KThread, Long> waitingThreads;
 
 	/**
 	 * Allocate a new Alarm. Set the machine's timer interrupt handler to this
@@ -27,7 +28,7 @@ public class Alarm {
 			}
 		});
 
-		this.waitQueue = new LinkedList<ThreadPriority>();
+		this.waitingThreads = new HashMap<KThread, Long>();
 	}
 
 	/**
@@ -39,17 +40,22 @@ public class Alarm {
 	public void timerInterrupt() {
 
 		Machine.interrupt().disable();
-		int numberOfThreadsInQueue = this.waitQueue.size();
+		LinkedList<KThread> finishedThreads = new LinkedList<>();
 
-		for (int i=0; i < numberOfThreadsInQueue; i++) {
-			ThreadPriority currentPriority = this.waitQueue.remove();
-			if (currentPriority.getWakeTime() < Machine.timer().getTime()) {
-				currentPriority.getThread().ready();
-			}
-			else {
-				this.waitQueue.add(currentPriority);
+		for (KThread thread : this.waitingThreads.keySet()) {
+
+			long currentThreadWakeTime = this.waitingThreads.get(thread);
+
+			if (currentThreadWakeTime < Machine.timer().getTime()) {
+				finishedThreads.add(thread);
+				thread.ready();
 			}
 		}
+
+		for (KThread thread : finishedThreads) {
+			this.waitingThreads.remove(thread);
+		}
+
 		Machine.interrupt().enable();
 
 		KThread.currentThread().yield();
@@ -75,24 +81,35 @@ public class Alarm {
 		}
 
 		KThread currentThread = KThread.currentThread();
-		ThreadPriority tp = new ThreadPriority(currentThread, wakeTime);
 
 		Machine.interrupt().disable();
-		waitQueue.add(tp);
+		updateThreadWaitTime(currentThread, wakeTime);
 		currentThread.sleep();
 		Machine.interrupt().enable();
 	}
 
-        /**
-	 * Cancel any timer set by <i>thread</i>, effectively waking
-	 * up the thread immediately (placing it in the scheduler
-	 * ready set) and returning true.  If <i>thread</i> has no
-	 * timer set, return false.
-	 * 
-	 * <p>
-	 * @param thread the thread whose timer should be cancelled.
-	 */
-        public boolean cancel(KThread thread) {
+	private void updateThreadWaitTime(KThread threadToUpdate, long newWakeTime) {
+
+		if (this.waitingThreads.containsKey(threadToUpdate)) {
+			if (newWakeTime > this.waitingThreads.get(threadToUpdate)) {
+				this.waitingThreads.replace(threadToUpdate, newWakeTime);
+			}
+			return;
+		}
+
+		this.waitingThreads.put(threadToUpdate, newWakeTime);
+	}
+
+	/**
+ * Cancel any timer set by <i>thread</i>, effectively waking
+ * up the thread immediately (placing it in the scheduler
+ * ready set) and returning true.  If <i>thread</i> has no
+ * timer set, return false.
+ *
+ * <p>
+ * @param thread the thread whose timer should be cancelled.
+ */
+	public boolean cancel(KThread thread) {
 		return false;
 	}
 
