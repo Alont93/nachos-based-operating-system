@@ -468,7 +468,7 @@ public class KThread {
 		new PingTest(0).run();
 
 //		Alarm.selfTest();
-		joinTest1();
+//		joinTest1();
 	}
 
 	private static final char dbgThread = 't';
