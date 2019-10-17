@@ -2,16 +2,20 @@ package nachos.threads;
 
 public class ThreadExchangeValue {
 
-    private KThread thread;
     private int value;
+    private boolean isSwitched;
 
-    public ThreadExchangeValue(KThread thread, int value) {
-        this.thread = thread;
+    public ThreadExchangeValue(int value, boolean isSwiched) {
         this.value = value;
+        this.isSwitched = isSwiched;
     }
 
-    public KThread getThread() {
-        return this.thread;
+    public boolean getIsSwitched() {
+        return this.isSwitched;
+    }
+
+    public void setIsSwitched(boolean switched) {
+        this.isSwitched = switched;
     }
 
     public int getValue() {
