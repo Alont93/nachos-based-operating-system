@@ -80,7 +80,7 @@ public class Alarm {
 			return;
 		}
 
-		KThread currentThread = KThread.currentThread();
+        KThread currentThread = KThread.currentThread();
 
 		Machine.interrupt().disable();
 		updateThreadWaitTime(currentThread, wakeTime);
@@ -110,8 +110,18 @@ public class Alarm {
  * @param thread the thread whose timer should be cancelled.
  */
 	public boolean cancel(KThread thread) {
-		return false;
-	}
+
+        Machine.interrupt().disable();
+        boolean isThreadWaiting = this.waitingThreads.containsKey(thread);
+
+        if (isThreadWaiting) {
+            thread.ready();
+            this.waitingThreads.remove(thread);
+        }
+
+        Machine.interrupt().enable();
+        return isThreadWaiting;
+    }
 
 	// Add Alarm testing code to the Alarm class
 
