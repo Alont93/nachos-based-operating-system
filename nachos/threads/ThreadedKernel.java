@@ -55,7 +55,8 @@ public class ThreadedKernel extends Kernel {
 
 		System.out.println();
 //		Condition.selfTest();
-		Condition2.selfTest();
+//		Condition2.selfTest();
+        Rendezvous.selfTest();
 	}
 
 	/**
